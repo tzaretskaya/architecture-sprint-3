@@ -1,0 +1,93 @@
+@startuml
+title Smart home ER Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+
+class Device {
+  +Long id
+  +Long userId
+  +Long externalId
+  +Long partnerId
+  +String name
+  +String serialNum
+  +int typeId
+  +json params
+  +String partnerDeviceType
+  +Status status
+  +ExternalStatus extStatus
+  +long houseId
+}
+
+class House {
+  +Long id
+  +double longitude
+  +double latitude
+}
+
+enum Status {
+  +Long dbId
+  +String name
+}
+
+class Partner {
+  +Long id
+  +Long externalId
+  +String name
+  +Description
+}
+
+class PartnerDeviceType {
+  +Long id
+  +Long partnerId
+  +Long externalId
+  +String name
+  +String descr
+}
+
+enum DeviceType {
+  +int dbId
+  +String name
+}
+
+class Script {
+  +Long id
+  +String name
+  +String type
+  +String cron
+  +DateTime startDate
+  +DateTime endDate
+}
+
+class ScriptDeviceRule {
+  +Long id
+  +Long scriptId
+  +int oorder
+  +String deviceId
+  +String command
+  +String commandValue
+}
+
+class User {
+  +Long id
+  +String password
+  +String email
+}
+
+class UserOauth {
+  +Long userId
+  +String oAuthToken
+}
+
+Device "0..*" -- "1" DeviceType
+House "1" -- "0..*" Device
+Device "1" -- "0..*" Script
+Partner "1" -- "1..*" Device
+Partner "1" -- "1..*" PartnerDeviceType
+Script "1" -- "1..*" ScriptDeviceRule
+User "1" -- "1..*" Device
+User "1" -- "1..*" UserOauth
+Status "1" -- "1..*" Device
+@enduml

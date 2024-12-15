@@ -1,0 +1,125 @@
+@startuml
+title Smart home Component Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person(user, "User", "A user of the Smart Home system")
+Person(admin, "Administrator", "An administrator managing the system")
+
+Container_Boundary(SmartHomeSystem, "Smart Home System") {
+  Container(ApiGateway, "API Gateway", "Kong", "routes, balances")
+  Container(DeviceApp, "Web Application", "Java, Spring", "Manages and monitors devices")
+  Container(Queue, "Message Queue", "Kafka", "Stores events")
+  Container(Database, "Database", "PostgreSQL", "Stores users, device data, oauth tokens, scripts, partners, device types, partner device types, houses")
+  Container(Cache, "Cache", "Redis", "Stores users, device data, oauth tokens, scripts, partners, device types, partner device types")
+  Container(DeviceIntegration, "Device Partners Integrations", "Java, Spring",  "Integrates with Partners")
+  Container(Auth, "Authentication Service", "Java, Spring", "Authenticates and authorizes user, OAuth with Partners")
+}
+
+Container(DeviceApp, "Web Application", "Java, Spring") {
+  Component(DeviceController, "DeviceController", "Handles Device operations")
+  Component(ScriptController, "ScriptController", "Handles Script operations")
+  Component(DeviceServiceLayer, "Device Service Layer", "Device CRUD, commands and monitoring")
+  Component(ScriptServiceLayer, "Script Service Layer", "Script CRUD")
+  Component(DeviceScriptServiceLayer, "Device Script Service Layer", "cron job for scripts")
+  Component(DeviceRepositoryLayer, "Device Repository Layer", "Data access logic")
+  Component(ScriptRepositoryLayer, "Script Repository Layer", "Data access logic")
+  Component(DeviceIntegrationClient, "Device Integration Client", "Monitor and do commands to partner integration service")
+  Component(MessageQueueListener, "MessageQueue Listener", "Listen to sensor events")
+}
+
+Rel(user, ApiGateway, "Uses the system via a browser or mobile application")
+Rel(admin, ApiGateway,"Manages the system")
+
+Rel(ApiGateway, DeviceController, "Sends device CRUD, device commands and monitoring requests")
+Rel(ApiGateway, ScriptController, "Sends script CRUD")
+
+Rel(MessageQueueListener, DeviceServiceLayer,"Updates device's status and start script's next step command")
+Rel(MessageQueueListener, Queue,"Receives sensor events")
+Rel(DeviceController,DeviceServiceLayer,"Calls business logic")
+Rel(DeviceScriptServiceLayer,ScriptServiceLayer,"By cron checks which scripts to start")
+Rel(DeviceScriptServiceLayer, DeviceServiceLayer,"Sends command of the first script's step to device")
+Rel(DeviceServiceLayer, DeviceIntegrationClient,"Monitor and do commands to partner integration service")
+Rel(ScriptController,ScriptServiceLayer,"Calls business logic")
+Rel(DeviceServiceLayer,DeviceRepositoryLayer,"Reads/Writes data")
+Rel(ScriptServiceLayer,ScriptRepositoryLayer,"Reads/Writes data")
+Rel(DeviceRepositoryLayer,Database,"Reads/Writes device and script data")
+Rel(ScriptRepositoryLayer,Database,"Reads/Writes device and script data")
+Rel(DeviceRepositoryLayer,Cache,"Reads device and script data")
+Rel(ScriptRepositoryLayer,Cache,"Reads device and script data")
+
+
+Container(Database, "Database", "replicated PostgreSQL") {
+  Component(DatabaseMaster, "Database Master", "Writes")
+  Component(DatabaseSlave1, "Database Slave 1", "Reads")
+  Component(DatabaseSlave2, "Database Slave 2", "Reads")
+}
+
+Rel(DatabaseMaster,DatabaseSlave1,"Replicates")
+Rel(DatabaseMaster,DatabaseSlave2, "Replicates")
+
+Container(Cache, "Cache", "replicated Redis") {
+  Component(CacheDatabaseMaster, "Database Master", "Writes")
+  Component(CacheDatabaseSlave1, "Database Slave 1", "Reads")
+  Component(CacheDatabaseSlave2, "Database Slave 2", "Reads")
+}
+
+Rel(CacheDatabaseMaster,CacheDatabaseSlave1,"Replicates")
+Rel(CacheDatabaseMaster,CacheDatabaseSlave2, "Replicates")
+
+Container(DeviceIntegration, "Device Partners Integrations", "Java, Spring") {
+  Component(DeviceIntegrationController, "DeviceIntegrationController", "Handles Device operations with Partners")
+  Component(IntegrationServiceLayer, "IntegrationService Layer", "Business logic")
+  Component(PartnerClient1, "PartnerClient1", "Access to Partner 1")
+  Component(PartnerClient2, "PartnerClient2", "Access to Partner 2")
+  Component(PartnerClientN, "PartnerClientN", "Access to Partner N")
+}
+
+Rel(DeviceIntegrationController,IntegrationServiceLayer, "Calls business logic")
+Rel(IntegrationServiceLayer,PartnerClient1, "Reads/Writes data")
+Rel(IntegrationServiceLayer,PartnerClient2, "Reads/Writes data")
+Rel(IntegrationServiceLayer,PartnerClientN, "Reads/Writes data")
+Rel(DeviceIntegrationClient, DeviceIntegrationController,"Monitor and do commands to partner integration service")
+
+Component_Ext(Partner1Api, "Partner 1 API", "API for device management and monitoring")
+Component_Ext(Partner2Api, "Partner 2 API", "API for device management and monitoring")
+Component_Ext(PartnerNApi, "Partner N API", "API for device management and monitoring")
+
+Component_Ext(partner1QueueClient, "Partner 1 Queue Client", "Publish sensor events")
+Component_Ext(partner2QueueClient, "Partner 2 Queue Client", "Publish sensor events")
+Component_Ext(partnerNQueueClient, "Partner N Queue Client", "Publish sensor events")
+
+Rel(PartnerClient1, Partner1Api, "Reads/Writes data")
+Rel(PartnerClient2, Partner2Api, "Reads/Writes data")
+Rel(PartnerClientN, PartnerNApi, "Reads/Writes data")
+
+Rel(partner1QueueClient, Queue, "Publish sensor events")
+Rel(partner2QueueClient, Queue, "Publish sensor events")
+Rel(partnerNQueueClient, Queue, "Publish sensor events")
+
+
+Container(Auth, "Authentication Service", "Java, Spring", "Authenticates and authorizes user, OAuth with Partners") {
+  Component(AuthController, "AuthController", "Authenticates and authorizes user")
+  Component(AuthServiceLayer, "Auth Service Layer", "Business logic")
+  Component(AuthRepositoryLayer, "Repository Layer", "Data access logic")
+  Component(OAuthController, "OAuthController", "OAuth with partners")
+  Component(OAuthServiceLayer, "OAuth Service Layer", "Business logic")
+  Component(PartnerLayer, "Partner Integration client Layer", "Data access logic")
+}
+
+Rel(ApiGateway, AuthController,"Sends auth requests")
+Rel(ApiGateway, OAuthController,"Sends OAuth requests")
+Rel(AuthController,AuthServiceLayer,"Calls business logic")
+Rel(AuthServiceLayer,AuthRepositoryLayer,"Reads/Writes data")
+Rel(AuthRepositoryLayer,Database,"Reads/Writes user data")
+Rel(AuthRepositoryLayer,Cache,"Reads user data")
+Rel(OAuthController,OAuthServiceLayer,"Calls business logic")
+Rel(OAuthServiceLayer,PartnerLayer,"Reads/Writes user's partner oauth data")
+Rel(OAuthServiceLayer,Database,"Reads/Writes user OAuth data")
+Rel(OAuthServiceLayer,Cache,"Reads/Writes user OAuth data")
+Rel(PartnerLayer, DeviceIntegrationController, "Sends OAuth commands to Partners")
+
+
+@enduml
