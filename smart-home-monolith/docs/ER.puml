@@ -81,6 +81,12 @@ class UserOauth {
   +String oAuthToken
 }
 
+
+class UserOauth {
+  +Long userId
+  +String oAuthToken
+}
+
 Device "0..*" -- "1" DeviceType
 House "1" -- "0..*" Device
 Device "1" -- "0..*" Script

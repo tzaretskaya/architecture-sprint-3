@@ -9,8 +9,10 @@ Person(user, "User", "A user of the Smart Home system")
 Person(admin, "Administrator", "An administrator managing the system")
 
 Container_Boundary(SmartHomeSystem, "Smart Home System") {
+  Container(WebDeviceApp, "Web Device App", "React/js", "Handles user's device requests, http")
+  Container(MobileDeviceApp, "Mobile Device App", "Kotlin", "Provide limited subset of device functionality, http")
   Container(ApiGateway, "API Gateway", "Kong", "routes, balances")
-  Container(DeviceApp, "Web Application", "Java, Spring", "Manages and monitors devices")
+  Container(DeviceApp, "DeviceApp", "Java, Spring", "Manages and monitors devices")
   Container(Queue, "Message Queue", "Kafka", "Stores events")
   Container(Database, "Database", "PostgreSQL", "Stores users, device data, oauth tokens, scripts, partners, device types, partner device types, houses")
   Container(Cache, "Cache", "Redis", "Stores users, device data, oauth tokens, scripts, partners, device types, partner device types")
@@ -30,8 +32,14 @@ Container(DeviceApp, "Web Application", "Java, Spring") {
   Component(MessageQueueListener, "MessageQueue Listener", "Listen to sensor events")
 }
 
-Rel(user, ApiGateway, "Uses the system via a browser or mobile application")
-Rel(admin, ApiGateway,"Manages the system")
+Rel(user, WebDeviceApp, "Uses the system via a browser")
+Rel(user, MobileDeviceApp, "Uses the system via a mobile application")
+Rel(admin, WebDeviceApp, "Uses the system via a browser")
+Rel(admin, MobileDeviceApp, "Uses the system via a mobile application")
+Rel(ApiGateway, Auth, "Authenticate and authorize the user")
+Rel(WebDeviceApp, ApiGateway, "Sends device commands")
+Rel(MobileDeviceApp, ApiGateway, "Sends device commands")
+Rel(ApiGateway, DeviceApp, "Sends device commands")
 
 Rel(ApiGateway, DeviceController, "Sends device CRUD, device commands and monitoring requests")
 Rel(ApiGateway, ScriptController, "Sends script CRUD")
