@@ -1,0 +1,18 @@
+@startuml
+title Smart home Context Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person(user, "User", "A user of Smart home")
+System(SmartHome, "SmartHome System", "System managing temperature at home")
+
+System_Ext(temperatureSensor, "Temperature sensor System", "External system at home for getting current temperature")
+System_Ext(heatingEquipment, "Heating relay", "External system at home for heating")
+
+Rel(user, SmartHome, "Uses the system")
+Rel(SmartHome,temperatureSensor,"Get current temperature")
+Rel(SmartHome,heatingEquipment,"Turn on/off heating, manage temperature")
+
+@enduml

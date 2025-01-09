@@ -1,0 +1,41 @@
+@startuml
+title Smart home DeviceServiceLayer Code Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+
+class DeviceScriptServiceLayer {
+  +ScriptServiceLayer
+  +DeviceServiceLayer
+  +runCronScriptsFirstStepCommand()
+}
+
+class ScriptServiceLayer {
+  +ScriptRepositoryLayer
+  +getScript(long id)
+  +addScript(ScriptRequest scriptRequest)
+  +updateScript(long id, ScriptRequest scriptRequest)
+  +deleteScript(long scriptId)
+  +getScriptsToStart()
+
+}
+
+class DeviceServiceLayer {
+  +DeviceRepositoryLayer
+  +MessageQueueListener
+  +DeviceIntegrationClient
+  +getDevice(long id)
+  +addDevice(DeviceRequest deviceRequest)
+  +updateDevice(long id, DeviceRequest deviceRequest)
+  +deleteDevice(long scriptId)
+  +sendCommand(long deviceId, CommandRequest command)
+  +updateStatusAndStartScriptNextCommand(long deviceId)
+  +getStatus(long deviceId)
+}
+
+DeviceScriptServiceLayer --> ScriptServiceLayer : getScriptsToStart()
+DeviceScriptServiceLayer --> DeviceServiceLayer : sendCommand(deviceId, command)
+
+@enduml
